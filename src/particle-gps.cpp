@@ -11,6 +11,16 @@ void setup() {
 }
 
 void loop() {
+	if (Serial.available()) {
+		Serial.print("Writing characters to the GPS: ");
+
+		while (Serial.available()) {
+			char c = Serial.read();
+			GPSSerial.write(c);
+			Serial.print(c);
+		}
+		Serial.println();
+	}
 	if (GPSSerial.available()) {
 		char c = GPSSerial.read();
 		Serial.write(c);
