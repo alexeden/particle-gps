@@ -1,10 +1,26 @@
 {
-    "extensions.ignoreRecommendations": true,
-    "C_Cpp.default.configurationProvider": "particle.particle-vscode-core",
-    "files.associations": {
-        "*.ino": "cpp"
-    },
-    "particle.firmwareVersion": "0.9.0",
-    "particle.targetPlatform": "boron",
-    "cortex-debug.openocdPath": "/Users/alexeden/.particle/toolchains/openocd/0.10.0-particle.1/bin/openocd"
+  "extensions.ignoreRecommendations": true,
+  "C_Cpp.default.configurationProvider": "particle.particle-vscode-core",
+  "C_Cpp.default.cppStandard": "c++17",
+  "C_Cpp.default.cStandard": "c11",
+  "C_Cpp.default.includePath": [
+    "${workspaceFolder}/**",
+    "/usr/local/Cellar/gcc/8.2.0/include/c++/8.2.0",
+    "/usr/local/Cellar/gcc/8.2.0/include/c++/8.2.0/x86_64-apple-darwin17.7.0",
+    "/Users/alexeden/Particle/community/libraries/**",
+    "/Users/alexeden/Particle/community/libraries/Adafruit_EPD_RK@1.0.2/src"
+  ],
+  "C_Cpp.default.macFrameworkPath": [
+    "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk/System/Library/Frameworks"
+  ],
+  "C_Cpp.default.compilerPath": "/usr/bin/clang",
+  "C_Cpp.default.defines": [
+    "ARDUINO"
+  ],
+  "files.associations": {
+    "*.ino": "cpp"
+  },
+  "particle.firmwareVersion": "1.1.0-rc.1",
+  "particle.targetPlatform": "boron",
+  "cortex-debug.openocdPath": "/Users/alexeden/.particle/toolchains/openocd/0.10.0-particle.1/bin/openocd"
 }
