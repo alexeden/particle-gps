@@ -1,11 +1,15 @@
-#ifndef PARTICLE // needs library dependency on SdFat
+#ifndef PARTICLE // requires library dependencies in examples, which is coming soon!
+
 #include <Adafruit_GPS.h>
-#if ARDUINO >= 100
- #include <SoftwareSerial.h>
- #include <SPI.h>
+
+#ifdef __AVR__
+  #include <SoftwareSerial.h>
+  #include <avr/sleep.h>
 #endif
+
+#include <SPI.h>
 #include <SD.h>
-#include <avr/sleep.h>
+
 
 // Ladyada's logger modified by Bill Greiman to use the SdFat library
 //
@@ -19,11 +23,11 @@
 //    ------> http://www.adafruit.com/products/
 // Pick one up today at the Adafruit electronics shop
 // and help support open source hardware & software! -ada
-// Fllybob added 10 sec logging option
-#ifndef PARTICLE
+
+#ifdef __AVR__
 SoftwareSerial mySerial(8, 7);
 #else
-USARTSerial& mySerial = Serial1;
+#define mySerial Serial1
 #endif
 
 Adafruit_GPS GPS(&mySerial);
@@ -33,11 +37,6 @@ Adafruit_GPS GPS(&mySerial);
 #define GPSECHO  true
 /* set to true to only log to SD when GPS has a fix, for debugging, keep it false */
 #define LOG_FIXONLY false
-
-// this keeps track of whether we're using the interrupt
-// off by default!
-boolean usingInterrupt = false;
-void useInterrupt(boolean); // Func prototype keeps Arduino 0023 happy
 
 // Set the pins used
 #define chipSelect 10
@@ -59,14 +58,14 @@ uint8_t parseHex(char c) {
 
 // blink out an error code
 void error(uint8_t errno) {
-  /*
+/*
   if (SD.errorCode()) {
-   putstring("SD error: ");
-   Serial.print(card.errorCode(), HEX);
-   Serial.print(',');
-   Serial.println(card.errorData(), HEX);
-   }
-   */
+    putstring("SD error: ");
+    Serial.print(card.errorCode(), HEX);
+    Serial.print(',');
+    Serial.println(card.errorData(), HEX);
+  }
+  */
   while(1) {
     uint8_t i;
     for (i=0; i<errno; i++) {
@@ -98,7 +97,7 @@ void setup() {
 
   // see if the card is present and can be initialized:
   if (!SD.begin(chipSelect, 11, 12, 13)) {
-    //if (!SD.begin(chipSelect)) {      // if you're using an UNO, you can use this line instead
+  //if (!SD.begin(chipSelect)) {      // if you're using an UNO, you can use this line instead
     Serial.println("Card init. failed!");
     error(2);
   }
@@ -115,12 +114,10 @@ void setup() {
 
   logfile = SD.open(filename, FILE_WRITE);
   if( ! logfile ) {
-    Serial.print("Couldnt create ");
-    Serial.println(filename);
+    Serial.print("Couldnt create "); Serial.println(filename);
     error(3);
   }
-  Serial.print("Writing to ");
-  Serial.println(filename);
+  Serial.print("Writing to "); Serial.println(filename);
 
   // connect to the GPS at the desired rate
   GPS.begin(9600);
@@ -132,97 +129,44 @@ void setup() {
   // For logging data, we don't suggest using anything but either RMC only or RMC+GGA
   // to keep the log files at a reasonable size
   // Set the update rate
-  GPS.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);   // 100 millihertz (once every 10 seconds), 1Hz or 5Hz update rate
+  GPS.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);   // 1 or 5 Hz update rate
 
   // Turn off updates on antenna status, if the firmware permits it
   GPS.sendCommand(PGCMD_NOANTENNA);
 
-  // the nice thing about this code is you can have a timer0 interrupt go off
-  // every 1 millisecond, and read data from the GPS for you. that makes the
-  // loop code a heck of a lot easier!
-  useInterrupt(true);
-
   Serial.println("Ready!");
 }
 
-
-// Interrupt is called once a millisecond, looks for any new GPS data, and stores it
-#ifndef PARTICLE
-SIGNAL(TIMER0_COMPA_vect) {
-#else
-void handleSysTick(void* data) {
-#endif
-  char c = GPS.read();
-  // if you want to debug, this is a good time to do it!
-  if (GPSECHO && c) {
-  #ifdef UDR0
-    UDR0 = c;
-    // writing direct to UDR0 is much much faster than Serial.print
-    // but only one character can be written at a time.
-  #else
-    Serial.write(c);
-  #endif
-  }
-}
-
-void useInterrupt(boolean v) {
-  #ifndef PARTICLE
-  if (v) {
-    // Timer0 is already used for millis() - we'll just interrupt somewhere
-    // in the middle and call the "Compare A" function above
-    OCR0A = 0xAF;
-    TIMSK0 |= _BV(OCIE0A);
-    usingInterrupt = true;
-  } else {
-    // do not call the interrupt function COMPA anymore
-    TIMSK0 &= ~_BV(OCIE0A);
-    usingInterrupt = false;
-  }
-  #else
-    static HAL_InterruptCallback callback;
-    static HAL_InterruptCallback previous;
-    callback.handler = handleSysTick;
-    HAL_Set_System_Interrupt_Handler(SysInterrupt_SysTick, &callback, &previous, nullptr);
-  #endif
-}
-
 void loop() {
-  if (! usingInterrupt) {
-    // read data from the GPS in the 'main loop'
-    char c = GPS.read();
-    // if you want to debug, this is a good time to do it!
-    if (GPSECHO)
-      if (c) Serial.print(c);
-  }
+  char c = GPS.read();
+  if (GPSECHO)
+     if (c)   Serial.print(c);
 
   // if a sentence is received, we can check the checksum, parse it...
   if (GPS.newNMEAreceived()) {
     // a tricky thing here is if we print the NMEA sentence, or data
     // we end up not listening and catching other sentences!
     // so be very wary if using OUTPUT_ALLDATA and trying to print out data
+    //Serial.println(GPS.lastNMEA());   // this also sets the newNMEAreceived() flag to false
 
-    // Don't call lastNMEA more than once between parse calls!  Calling lastNMEA
-    // will clear the received flag and can cause very subtle race conditions if
-    // new data comes in before parse is called again.
-    char *stringptr = GPS.lastNMEA();
-
-    if (!GPS.parse(stringptr))   // this also sets the newNMEAreceived() flag to false
+    if (!GPS.parse(GPS.lastNMEA()))   // this also sets the newNMEAreceived() flag to false
       return;  // we can fail to parse a sentence in which case we should just wait for another
 
     // Sentence parsed!
     Serial.println("OK");
     if (LOG_FIXONLY && !GPS.fix) {
-      Serial.print("No Fix");
-      return;
+        Serial.print("No Fix");
+        return;
     }
 
     // Rad. lets log it!
     Serial.println("Log");
 
+    char *stringptr = GPS.lastNMEA();
     uint8_t stringsize = strlen(stringptr);
     if (stringsize != logfile.write((uint8_t *)stringptr, stringsize))    //write the string to the SD file
-        error(4);
-    if (strstr(stringptr, "RMC") || strstr(stringptr, "GGA"))   logfile.flush();
+      error(4);
+    if (strstr(stringptr, "RMC"))   logfile.flush();
     Serial.println();
   }
 }
