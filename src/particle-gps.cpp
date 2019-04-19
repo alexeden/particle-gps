@@ -1,4 +1,5 @@
 #include "Particle.h"
+#include "Adafruit_GPS.h"
 #include "spark-streaming.h"
 
 #define PMTK_SET_NMEA_UPDATE_100_MILLIHERTZ "$PMTK220,10000*2F" ///< Once every 10 seconds, 100 millihertz.
@@ -39,6 +40,9 @@
 #define PGCMD_ANTENNA "$PGCMD,33,1*6C"   ///< request for updates on antenna status
 #define PGCMD_NOANTENNA "$PGCMD,33,0*6D" ///< don't show antenna status messages
 #define GPSSerial Serial1
+#define GPSECHO false
+
+Adafruit_GPS GPS(&GPSSerial);
 
 void setup();
 void loop();
@@ -47,23 +51,41 @@ void loop();
 void setup() {
 	Cellular.off();
 	Serial.begin(115200);
-	Serial.println("I'm the main serial port");
-	GPSSerial.begin(9600);
+	GPS.begin(9600);
+	GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA);
+	GPS.sendCommand(PGCMD_ANTENNA);
+	GPS.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);
+
+	Serial << "Device ID: " << System.deviceID() << endl;
+	Serial << "System reset enabled: " << System.resetEnabled() << endl;
+	Serial << "System updates enabled: " << System.updatesEnabled() << endl;
+	Serial << "System updates pending: " << System.updatesPending() << endl;
+	Serial << "System version: " << System.version() << endl;
+	Serial << "System version number: " << System.versionNumber() << endl;
+	Serial << "System wake up pin: " << System.wakeUpPin() << endl;
+	Serial << "System wake up reason: " << System.wakeUpReason() << endl;
+	Serial << "System was woken up by pin: " << System.wokenUpByPin() << endl;
+	Serial << "System was woken up by RTC: " << System.wokenUpByRtc() << endl;
 }
 
 void loop() {
-	if (Serial.available()) {
-		Serial.print("Writing characters to the GPS: ");
+	Serial << "GPS fix: " << GPS.fix << endl;
+	Serial << "GPS fix quality: " << GPS.fixquality << endl;
+	Serial << "GPS satellites: " << GPS.satellites << endl;
+	delay(2000);
 
-		while (Serial.available()) {
-			char c = Serial.read();
-			GPSSerial.write(c);
-			Serial.print(c);
-		}
-		Serial.println();
-	}
-	if (GPSSerial.available()) {
-		char c = GPSSerial.read();
-		Serial.write(c);
-	}
+	// if (Serial.available()) {
+	// 	Serial.print("Writing characters to the GPS: ");
+
+	// 	while (Serial.available()) {
+	// 		char c = Serial.read();
+	// 		GPSSerial.write(c);
+	// 		Serial.print(c);
+	// 	}
+	// 	Serial.println();
+	// }
+	// if (GPSSerial.available()) {
+	// 	char c = GPSSerial.read();
+	// 	Serial.write(c);
+	// }
 }
