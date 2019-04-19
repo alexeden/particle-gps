@@ -1,5 +1,4 @@
 .vscode/ipch
 .vscode/.browse.*
 target/*
-lib/*
 shared/*
