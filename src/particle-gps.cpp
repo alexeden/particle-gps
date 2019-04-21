@@ -1,20 +1,14 @@
 #define ARDUINO 101
-
-#include "Adafruit_GPS.h"
+#include "ArduinoJson.h"
 #include "Particle.h"
-#include "TinyGPS++.h"
 #include "spark-streaming.h"
+#include "TinyGPS++.h"
 
 #define PGCMD_ANTENNA "$PGCMD,33,1*6C" ///< request for updates on antenna status
 #define PMTK_SET_NMEA_OUTPUT_RMCGGA "$PMTK314,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*28" ///< turn on GPRMC and GGA
 #define PMTK_SET_NMEA_UPDATE_1HZ  "$PMTK220,1000*1F"              ///<  1 Hz
-
 #define GPSSerial Serial1
 
-// Adafruit_GPS GPS(&GPSSerial);
-TinyGPSPlus gps;
-TinyGPSCustom fix(gps, "GPGGA", 6);
-TinyGPSCustom antenna(gps, "PGTOP", 2);
 
 void setup();
 void loop();
@@ -22,8 +16,19 @@ void loop();
 // Cloud function declarations
 int cloudSetInterval(String ms);
 
+// Cloud publish timers
 uint32_t interval = 5000;
 uint32_t timer	= millis();
+
+// Cloud publish document
+const int event_fields = JSON_OBJECT_SIZE(13);
+StaticJsonDocument<event_fields> doc;
+
+// GPS
+TinyGPSPlus gps;
+TinyGPSCustom fix(gps, "GPGGA", 6);
+TinyGPSCustom antenna(gps, "PGTOP", 2);
+
 
 void setup() {
 	Serial.begin(115200);
@@ -40,16 +45,20 @@ void setup() {
 		Serial << "FAILED TO REGISTER setInterval FUNCTION!" << endl;
 	}
 
-	Serial << "Device ID: " << System.deviceID() << endl;
-	Serial << "System reset enabled: " << System.resetEnabled() << endl;
-	Serial << "System updates enabled: " << System.updatesEnabled() << endl;
-	Serial << "System updates pending: " << System.updatesPending() << endl;
-	Serial << "System version: " << System.version() << endl;
-	Serial << "System version number: " << System.versionNumber() << endl;
-	Serial << "System wake up pin: " << System.wakeUpPin() << endl;
-	Serial << "System wake up reason: " << System.wakeUpReason() << endl;
-	Serial << "System was woken up by pin: " << System.wokenUpByPin() << endl;
-	Serial << "System was woken up by RTC: " << System.wokenUpByRtc() << endl;
+	// One-time doc updates
+	doc["deviceId"].set(System.deviceID());
+	doc["version"].set(System.version());
+	doc["versionNumber"].set(System.versionNumber());
+	// Serial << "Device ID: " << System.deviceID() << endl;
+	// Serial << "System reset enabled: " << System.resetEnabled() << endl;
+	// Serial << "System updates enabled: " << System.updatesEnabled() << endl;
+	// Serial << "System updates pending: " << System.updatesPending() << endl;
+	// Serial << "System version: " << System.version() << endl;
+	// Serial << "System version number: " << System.versionNumber() << endl;
+	// Serial << "System wake up pin: " << System.wakeUpPin() << endl;
+	// Serial << "System wake up reason: " << System.wakeUpReason() << endl;
+	// Serial << "System was woken up by pin: " << System.wokenUpByPin() << endl;
+	// Serial << "System was woken up by RTC: " << System.wokenUpByRtc() << endl;
 }
 
 void loop() {
@@ -71,6 +80,7 @@ void loop() {
 		timer = millis(); // reset the timer
 	}
 }
+
 
 int cloudSetInterval(String ms) {
 	int newInterval = ms.toInt();
