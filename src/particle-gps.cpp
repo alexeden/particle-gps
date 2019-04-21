@@ -27,6 +27,11 @@ void setup() {
 		Serial << "FAILED TO REGISTER interval VARIABLE!" << endl;
 	}
 
+    // Functions
+    if (!Particle.function("setInterval", cloudSetInterval)) {
+		Serial << "FAILED TO REGISTER setInterval FUNCTION!" << endl;
+    }
+
 	Serial << "Device ID: " << System.deviceID() << endl;
 	Serial << "System reset enabled: " << System.resetEnabled() << endl;
 	Serial << "System updates enabled: " << System.updatesEnabled() << endl;
@@ -38,7 +43,19 @@ void setup() {
 	Serial << "System was woken up by pin: " << System.wokenUpByPin() << endl;
 	Serial << "System was woken up by RTC: " << System.wokenUpByRtc() << endl;
 }
-uint32_t timer = millis();
+
+int cloudSetInterval(String ms) {
+    int newInterval = ms.toInt();
+    if (newInterval < 1000 || newInterval % 1000 != 0) {
+        Serial << "Interval must be greater than 0 and a factor of 1000" << endl;
+        return -1;
+    }
+    else {
+        interval = newInterval;
+        Serial << "Interval set to " << interval << endl;
+        return 0;
+    }
+}
 
 void loop() {
 	GPS.read();
