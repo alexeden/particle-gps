@@ -9,12 +9,23 @@ Adafruit_GPS GPS(&GPSSerial);
 void setup();
 void loop();
 
+// Cloud function declarations
+int cloudSetInterval(String ms);
+
+uint32_t interval = 20000;
+uint32_t timer	= millis();
+
 void setup() {
 	Serial.begin(115200);
 	GPS.begin(9600);
 	GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA);
 	GPS.sendCommand(PGCMD_ANTENNA);
 	GPS.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);
+
+	// Variables
+	if (!Particle.variable("interval", interval)) {
+		Serial << "FAILED TO REGISTER interval VARIABLE!" << endl;
+	}
 
 	Serial << "Device ID: " << System.deviceID() << endl;
 	Serial << "System reset enabled: " << System.resetEnabled() << endl;
@@ -35,9 +46,7 @@ void loop() {
 
 	if (timer > millis()) timer = millis();
 
-	// approximately every 2 seconds or so, print out the current stats
-	if (millis() - timer > 5000) {
-		timer			   = millis(); // reset the timer
+	if (millis() - timer > interval) {
 		CellularSignal sig = Cellular.RSSI();
 		Serial << "Cell signal strength: " << sig.rssi << endl;
 		Serial << "Cell signal quality: " << sig.qual << endl;
@@ -55,5 +64,7 @@ void loop() {
 			Serial << "Altitude: " << GPS.altitude << endl;
 			Serial << "Satellites: " << GPS.satellites << endl;
 		}
+
+		timer = millis(); // reset the timer
 	}
 }
