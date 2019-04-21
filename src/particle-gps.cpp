@@ -12,7 +12,7 @@ void loop();
 // Cloud function declarations
 int cloudSetInterval(String ms);
 
-uint32_t interval = 20000;
+uint32_t interval = 60000;
 uint32_t timer	= millis();
 
 void setup() {
