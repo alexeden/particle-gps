@@ -16,7 +16,12 @@
     "ARDUINO=101"
   ],
   "files.associations": {
-    "*.ino": "cpp"
+    "*.config": "yaml",
+    "*.cc": "cpp",
+    ".clang-format": "yaml",
+    "*.ino": "cpp",
+    "array": "cpp",
+    "initializer_list": "cpp"
   },
   "particle.firmwareVersion": "1.2.0-beta.1",
   "particle.targetPlatform": "boron",
