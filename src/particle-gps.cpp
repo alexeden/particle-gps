@@ -75,6 +75,9 @@ void loop() {
 		Serial << "Time: " << GPS.hour << ":" << GPS.minute << ":" << GPS.seconds << " " << GPS.milliseconds << endl;
 		Serial << "Date: " << GPS.month << "/" << GPS.day << "/20" << GPS.year << endl;
 		if (GPS.fix) {
+			String msg = "";
+			msg = msg + GPS.latitude + GPS.lat + ", " + GPS.longitude + GPS.lon;
+            Particle.publish("location", msg);
 			Serial << "Location: " << GPS.latitude << GPS.lat << ", " << GPS.longitude << GPS.lon << endl;
 			Serial << "Speed (knots): " << GPS.speed << endl;
 			Serial << "Angle: " << GPS.angle << endl;
