@@ -1,4 +1,3 @@
-#define ARDUINO 101
 #include "ArduinoJson.h"
 #include "Particle.h"
 #include "spark-streaming.h"
@@ -23,6 +22,7 @@ uint32_t timer	= millis();
 // Cloud publish document
 const int event_fields = JSON_OBJECT_SIZE(13);
 StaticJsonDocument<event_fields> doc;
+char serialized_doc[1024];
 
 // GPS
 TinyGPSPlus gps;
@@ -46,37 +46,50 @@ void setup() {
 	}
 
 	// One-time doc updates
-	doc["deviceId"].set(System.deviceID());
-	doc["version"].set(System.version());
-	doc["versionNumber"].set(System.versionNumber());
-	// Serial << "Device ID: " << System.deviceID() << endl;
-	// Serial << "System reset enabled: " << System.resetEnabled() << endl;
-	// Serial << "System updates enabled: " << System.updatesEnabled() << endl;
-	// Serial << "System updates pending: " << System.updatesPending() << endl;
-	// Serial << "System version: " << System.version() << endl;
-	// Serial << "System version number: " << System.versionNumber() << endl;
-	// Serial << "System wake up pin: " << System.wakeUpPin() << endl;
-	// Serial << "System wake up reason: " << System.wakeUpReason() << endl;
-	// Serial << "System was woken up by pin: " << System.wokenUpByPin() << endl;
-	// Serial << "System was woken up by RTC: " << System.wokenUpByRtc() << endl;
+	// doc["deviceId"].set(serialized("\"" + System.deviceID() + "\""));
+	// doc["version"].set(serialized("\"" + System.version() + "\""));
+	// doc["versionNumber"] = System.versionNumber();
+	doc["lat"] = 0;
+	doc["lng"] = 0;
+	doc["locationAge"] = -1;
+	doc["satellites"] = 0;
+	doc["altitude"] = 0;
+	doc["speed"] = 0;
+	doc["date"] = 0;
+	doc["time"] = 0;
+	doc["hdop"] = 0;
+	doc["hasFix"] = false;
+	doc["antenna"] = 0;
 }
 
 void loop() {
 	while (GPSSerial.available() > 0) gps.encode(GPSSerial.read());
 
+	if (gps.location.isUpdated()) {
+		doc["lat"] = gps.location.lat();
+		doc["lng"] = gps.location.lng();
+	}
+
+	// if (gps.satellites.isUpdated()) { }
+	// if (gps.altitude.isUpdated()) { }
+	// if (gps.altitude.isUpdated()) { }
+	doc["locationAge"] = gps.location.age();
+	doc["satellites"] = gps.satellites.value();
+	doc["altitude"] = gps.altitude.meters();
+	doc["speed"] = gps.speed.mps();
+	doc["date"] = gps.date.value();
+	doc["time"] = gps.time.value();
+	doc["hdop"] = gps.hdop.value();
+	doc["hasFix"] = fix.value() > 0 && gps.satellites.value() > 0;
+	doc["antenna"] = antenna.value();
+
+
 	if (timer > millis()) timer = millis();
 
 	if (millis() - timer > interval) {
-		Serial << _FLOAT(gps.location.lat(), 6) << ", " << _FLOAT(gps.location.lng(), 6) << endl;
-		Serial << "Satellites: " << gps.satellites.value() << endl;
-		Serial << "Location age: " << gps.location.age() << endl;
-		Serial << "Altitude in meters: " << gps.altitude.meters() << endl;
-		Serial << "Speed (mps): " << gps.speed.mps() << endl;
-		Serial << "Time: " << gps.time.value() << endl;
-		Serial << "HDOP: " << gps.hdop.value() << endl;
-		Serial << "Fix: " << fix.value() << endl;
-		Serial << "Date: " << gps.date.value() << endl;
-		Serial << "Antenna: " << antenna.value() << endl;
+		Serial << "Doc size: " << measureJsonPretty(doc) << endl;
+		serializeJsonPretty(doc, serialized_doc);
+		Serial << serialized_doc << endl;
 		timer = millis(); // reset the timer
 	}
 }
@@ -94,35 +107,3 @@ int cloudSetInterval(String ms) {
 		return 0;
 	}
 }
-
-// void loop() {
-// GPS.read();
-// if (GPS.newNMEAreceived()) { GPS.parse(GPS.lastNMEA()); }
-
-// if (timer > millis()) timer = millis();
-
-// if (millis() - timer > interval) {
-// 	CellularSignal sig = Cellular.RSSI();
-// 	Serial << "Cell signal strength: " << sig.rssi << endl;
-// 	Serial << "Cell signal quality: " << sig.qual << endl;
-// 	Serial << "Cell access protocol: " << sig.getAccessTechnology() << endl;
-// 	Serial << "Cell private IP: " << Cellular.localIP() << endl;
-// 	Serial << "GPS fix: " << GPS.fix << endl;
-// 	Serial << "GPS fix quality: " << GPS.fixquality << endl;
-// 	Serial << "GPS satellites: " << GPS.satellites << endl;
-// 	Serial << "Time: " << GPS.hour << ":" << GPS.minute << ":" << GPS.seconds << " " << GPS.milliseconds << endl;
-// 	Serial << "Date: " << GPS.month << "/" << GPS.day << "/20" << GPS.year << endl;
-// 	if (GPS.fix) {
-// 		String msg = "";
-// 		msg = msg + GPS.latitude + GPS.lat + ", " + GPS.longitude + GPS.lon;
-//         Particle.publish("location", msg);
-// 		Serial << "Location: " << GPS.latitude << GPS.lat << ", " << GPS.longitude << GPS.lon << endl;
-// 		Serial << "Speed (knots): " << GPS.speed << endl;
-// 		Serial << "Angle: " << GPS.angle << endl;
-// 		Serial << "Altitude: " << GPS.altitude << endl;
-// 		Serial << "Satellites: " << GPS.satellites << endl;
-// 	}
-
-// 	timer = millis(); // reset the timer
-// }
-// }

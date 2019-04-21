@@ -21,7 +21,8 @@
     ".clang-format": "yaml",
     "*.ino": "cpp",
     "array": "cpp",
-    "initializer_list": "cpp"
+    "initializer_list": "cpp",
+    "bitset": "cpp"
   },
   "particle.firmwareVersion": "1.2.0-beta.1",
   "particle.targetPlatform": "boron",
