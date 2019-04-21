@@ -49,20 +49,11 @@ void loop() {
 		Serial << "Time: " << GPS.hour << ":" << GPS.minute << ":" << GPS.seconds << " " << GPS.milliseconds << endl;
 		Serial << "Date: " << GPS.month << "/" << GPS.day << "/20" << GPS.year << endl;
 		if (GPS.fix) {
-			Serial.print("Location: ");
-			Serial.print(GPS.latitude, 4);
-			Serial.print(GPS.lat);
-			Serial.print(", ");
-			Serial.print(GPS.longitude, 4);
-			Serial.println(GPS.lon);
-			Serial.print("Speed (knots): ");
-			Serial.println(GPS.speed);
-			Serial.print("Angle: ");
-			Serial.println(GPS.angle);
-			Serial.print("Altitude: ");
-			Serial.println(GPS.altitude);
-			Serial.print("Satellites: ");
-			Serial.println((int) GPS.satellites);
+			Serial << "Location: " << GPS.latitude << GPS.lat << ", " << GPS.longitude << GPS.lon << endl;
+			Serial << "Speed (knots): " << GPS.speed << endl;
+			Serial << "Angle: " << GPS.angle << endl;
+			Serial << "Altitude: " << GPS.altitude << endl;
+			Serial << "Satellites: " << GPS.satellites << endl;
 		}
 	}
 }
