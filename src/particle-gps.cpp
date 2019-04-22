@@ -16,13 +16,13 @@ void loop();
 int cloudSetInterval(String ms);
 
 // Cloud publish timers
-uint32_t interval = 5000;
+uint32_t interval = 30000;
 uint32_t timer	= millis();
 
 // Cloud publish document
-const int event_fields = JSON_OBJECT_SIZE(13);
+const int event_fields = JSON_OBJECT_SIZE(11);
 StaticJsonDocument<event_fields> doc;
-char serialized_doc[1024];
+char serialized_doc[512];
 
 // GPS
 TinyGPSPlus gps;
@@ -70,9 +70,6 @@ void loop() {
 		doc["lng"] = gps.location.lng();
 	}
 
-	// if (gps.satellites.isUpdated()) { }
-	// if (gps.altitude.isUpdated()) { }
-	// if (gps.altitude.isUpdated()) { }
 	doc["locationAge"] = gps.location.age();
 	doc["satellites"] = gps.satellites.value();
 	doc["altitude"] = gps.altitude.meters();
@@ -87,8 +84,8 @@ void loop() {
 	if (timer > millis()) timer = millis();
 
 	if (millis() - timer > interval) {
-		Serial << "Doc size: " << measureJsonPretty(doc) << endl;
-		serializeJsonPretty(doc, serialized_doc);
+		serializeJson(doc, serialized_doc);
+		Particle.publish("location", serialized_doc, PUBLIC);
 		Serial << serialized_doc << endl;
 		timer = millis(); // reset the timer
 	}
